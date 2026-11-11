@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>냉장고 구조대 — FRIDGE RESCUE</title>
+  <meta name="description" content="냉장고 속 남은 식재료를 사진이나 텍스트로 분석하여 알뜰하고 맛있는 요리 레시피를 추천해 드립니다.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- 헤더 영역 -->
+  <header class="site-header">
+    <div class="container header-container">
+      <div class="logo-area">
+        <span class="logo-icon" aria-hidden="true">🥦</span>
+        <div class="logo-text">
+          <h1 class="logo-title">냉장고 구조대</h1>
+          <span class="logo-sub">FRIDGE RESCUE</span>
+        </div>
+      </div>
+      <p class="header-desc">
+        냉장고 속 재료를 사진이나 텍스트로 쏙! 남은 재료로 만드는 맞춤 요리를 추천받아 음식물 낭비를 줄여보세요.
+      </p>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="container main-content">
+
+    <!-- 1단계: 재료 등록 방식 선택 탭 -->
+    <section class="section-card" aria-labelledby="step1-title">
+      <div class="section-header">
+        <span class="step-badge">1단계</span>
+        <h2 id="step1-title" class="section-title">냉장고 식재료 등록하기</h2>
+      </div>
+      <p class="section-subtitle">냉장고 내부 사진을 여러 장 올려 AI 분석을 받거나, 재료명을 직접 입력해 보세요.</p>
+
+      <div class="tab-buttons" role="tablist" aria-label="재료 입력 방식 선택">
+        <button type="button" class="tab-btn active" role="tab" id="tab-photo-btn" aria-selected="true" aria-controls="tab-photo">
+          📷 사진으로 분석하기
+        </button>
+        <button type="button" class="tab-btn" role="tab" id="tab-direct-btn" aria-selected="false" aria-controls="tab-direct">
+          ✍️ 직접 텍스트로 입력하기
+        </button>
+      </div>
+
+      <!-- [탭 1] 사진 업로드 패널 -->
+      <div id="tab-photo" class="tab-panel active" role="tabpanel" aria-labelledby="tab-photo-btn">
+        <div class="upload-dropzone" id="upload-dropzone" tabindex="0" role="button" aria-label="냉장고 사진 업로드 영역">
+          <span class="upload-icon" aria-hidden="true">📥</span>
+          <p class="upload-title">냉장고 사진을 이곳에 끌어다 놓거나 클릭하여 선택하세요</p>
+          <p class="upload-info">
+            지원 형식: JPG, JPEG, PNG, WEBP &nbsp;|&nbsp; 최대 5장 &nbsp;|&nbsp; 1장당 최대 8MB
+          </p>
+          <input type="file" id="photo-input" multiple accept="image/jpeg,image/png,image/webp" class="visually-hidden">
+        </div>
+
+        <!-- 사진 미리보기 리스트 -->
+        <div id="photo-preview-container" class="photo-preview-container hidden" aria-live="polite">
+          <div class="preview-header">
+            <span class="preview-count" id="preview-count">선택된 사진: 0장 / 최대 5장</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="btn-clear-photos">전체 사진 비우기</button>
+          </div>
+          <div class="preview-grid" id="preview-grid"></div>
+        </div>
+
+        <!-- 사진 분석 요청 버튼 및 로딩 -->
+        <div class="action-row">
+          <button type="button" class="btn btn-primary" id="btn-analyze-photos" disabled>
+            🔍 AI 식재료 분석 시작하기
+          </button>
+          <div id="analyze-spinner" class="loading-state hidden" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>AI가 냉장고 사진을 꼼꼼히 분석하고 있습니다... (약 5~10초 소요)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- [탭 2] 직접 입력 패널 -->
+      <div id="tab-direct" class="tab-panel" role="tabpanel" aria-labelledby="tab-direct-btn" hidden>
+        <div class="direct-input-form">
+          <label for="direct-ingredient-input" class="form-label">보유 중인 식재료 입력</label>
+          <div class="input-group">
+            <input type="text" id="direct-ingredient-input" class="form-control" placeholder="예: 양파, 두부, 달걀, 돼지고기 (쉼표 또는 엔터로 추가)" autocomplete="off">
+            <button type="button" class="btn btn-secondary" id="btn-add-direct">추가하기</button>
+          </div>
+          <p class="form-hint">여러 재료를 쉼표(,)로 구분하여 한 번에 입력할 수도 있습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2단계: 식재료 목록 확인 및 수정 영역 -->
+    <section class="section-card" id="ingredients-review-section" aria-labelledby="step2-title">
+      <div class="section-header">
+        <span class="step-badge">2단계</span>
+        <h2 id="step2-title" class="section-title">식재료 확인 및 수정</h2>
+      </div>
+      <p class="section-subtitle">
+        AI가 식별한 후보 또는 직접 입력한 재료를 확인해 주세요. 잘못된 항목은 삭제하거나 수정하고, 빠진 재료는 추가할 수 있습니다.
+      </p>
+
+      <!-- 안내 배너 -->
+      <div class="safety-banner">
+        <span class="safety-icon" aria-hidden="true">🛡️</span>
+        <div class="safety-text">
+          <strong>식품 안전 안내:</strong> AI 사진 분석은 보조 도구이며 소비기한, 신선도, 상함 여부를 판별하지 못합니다. 실제 식재료 상태와 알레르기 정보를 반드시 직접 확인하세요!
+        </div>
+      </div>
+
+      <!-- 현재 등록된 재료 리스트 -->
+      <div class="ingredients-list-container">
+        <div class="list-controls-bar">
+          <span class="list-summary" id="ingredients-count-summary">선택된 재료: 0개</span>
+          <div class="list-actions">
+            <button type="button" class="btn btn-xs btn-outline" id="btn-select-all">전체 선택</button>
+            <button type="button" class="btn btn-xs btn-outline" id="btn-deselect-all">전체 해제</button>
+            <button type="button" class="btn btn-xs btn-outline-danger" id="btn-clear-all-ingredients">전체 삭제</button>
+          </div>
+        </div>
+
+        <div id="ingredients-chips" class="ingredients-chips" aria-live="polite">
+          <div class="empty-state-text" id="empty-ingredients-text">
+            아직 등록된 재료가 없습니다. 사진을 분석하거나 직접 재료를 추가해 주세요.
+          </div>
+        </div>
+
+        <!-- 재료 직접 즉시 추가 인라인 폼 -->
+        <div class="add-more-row">
+          <label for="add-more-input" class="visually-hidden">재료 추가</label>
+          <input type="text" id="add-more-input" class="form-control form-control-sm" placeholder="추가할 재료명 입력 후 Enter">
+          <button type="button" class="btn btn-sm btn-outline-success" id="btn-add-more">+ 재료 추가</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3단계: 요리 추천 조건 설정 및 요청 영역 -->
+    <section class="section-card" id="recipe-condition-section" aria-labelledby="step3-title">
+      <div class="section-header">
+        <span class="step-badge">3단계</span>
+        <h2 id="step3-title" class="section-title">요리 추천 조건 & 맞춤 설정</h2>
+      </div>
+
+      <div class="form-grid">
+        <!-- 인원수 선택 -->
+        <div class="form-group">
+          <label for="servings-select" class="form-label">식사 인원수 <span class="required">*</span></label>
+          <select id="servings-select" class="form-control">
+            <option value="1">1인분 (혼밥)</option>
+            <option value="2" selected>2인분 (기본)</option>
+            <option value="3">3인분</option>
+            <option value="4">4인분 (가족)</option>
+            <option value="5">5인분 이상</option>
+          </select>
+        </div>
+
+        <!-- 음식 취향 / 스타일 -->
+        <div class="form-group">
+          <label for="preference-input" class="form-label">선호 음식 / 조리 스타일 (선택)</label>
+          <input type="text" id="preference-input" class="form-control" placeholder="예: 한식 국물 요리, 기름기 적은 다이어트식, 간단 안주">
+        </div>
+
+        <!-- 우선 소비 재료 -->
+        <div class="form-group full-width">
+          <label for="use-first-input" class="form-label">소비기한 임박 / 우선 사용하고 싶은 재료 (선택)</label>
+          <input type="text" id="use-first-input" class="form-control" placeholder="예: 시들기 직전인 대파, 유통기한 임박한 두부">
+          <p class="form-hint">작성해 주신 재료를 가장 우선적으로 활용하는 맞춤 요리를 제안합니다.</p>
+        </div>
+      </div>
+
+      <!-- 요리 추천 생성 액션 버튼 -->
+      <div class="recipe-action-area">
+        <button type="button" class="btn btn-success btn-lg" id="btn-request-recipes" disabled>
+          🍳 확인된 재료로 요리 3가지 추천받기
+        </button>
+        <div id="recipe-spinner" class="loading-state hidden" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>냉장고 속 재료로 만들 수 있는 최고의 요리 3가지를 구상 중입니다...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4단계: AI 요리 추천 결과 카드 및 상세 레시피 영역 -->
+    <section class="section-card hidden" id="recipe-results-section" aria-labelledby="step4-title">
+      <div class="section-header">
+        <span class="step-badge">4단계</span>
+        <h2 id="step4-title" class="section-title">구조대 AI 추천 요리 3선</h2>
+      </div>
+      <p class="section-subtitle">추천된 카드를 클릭하면 상세 레시피와 재료 분량, 단계별 조리 순서를 확인할 수 있습니다.</p>
+
+      <div class="recipe-cards-grid" id="recipe-cards-grid">
+        <!-- 동적으로 추천 카드 3개 삽입 -->
+      </div>
+
+      <!-- 선택된 요리 상세 레시피 모달 / 뷰어 -->
+      <div class="recipe-detail-box hidden" id="recipe-detail-box" aria-live="polite">
+        <!-- 동적으로 상세 레시피 렌더링 -->
+      </div>
+    </section>
+
+    <!-- 5단계: 로그인 없는 서비스 피드백 작성 및 최신순 목록 -->
+    <section class="section-card" id="feedback-section" aria-labelledby="step5-title">
+      <div class="section-header">
+        <span class="step-badge">의견 나눔</span>
+        <h2 id="step5-title" class="section-title">냉장고 구조대 응원 및 피드백</h2>
+      </div>
+      <p class="section-subtitle">
+        로그인 없이 자유롭게 서비스에 대한 소감이나 개선 의견을 남겨주세요.
+      </p>
+
+      <!-- 피드백 입력 폼 -->
+      <form id="feedback-form" class="feedback-form" novalidate>
+        <div class="form-group">
+          <label for="feedback-name" class="form-label">작성자 닉네임 (선택)</label>
+          <input type="text" id="feedback-name" class="form-control" maxlength="30" placeholder="익명의 구조대원 (미입력 시)">
+        </div>
+
+        <div class="form-group">
+          <label for="feedback-message" class="form-label">피드백 내용 <span class="required">* (최대 500자)</span></label>
+          <textarea id="feedback-message" class="form-control" rows="3" maxlength="500" placeholder="서비스를 사용해 보신 소감이나 건의하고 싶은 점을 적어주세요. (전화번호, 주소 등 개인정보는 작성하지 마세요)" required></textarea>
+          <div class="char-count-row">
+            <span class="privacy-notice">⚠️ 공개 게시판이므로 주민번호, 전화번호 등 개인정보 입력을 금지합니다.</span>
+            <span class="char-counter" id="char-counter">0 / 500자</span>
+          </div>
+        </div>
+
+        <div class="form-action-row">
+          <button type="submit" class="btn btn-primary" id="btn-submit-feedback">
+            💬 피드백 등록하기
+          </button>
+          <div id="feedback-spinner" class="loading-state hidden" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>피드백을 저장하고 있습니다...</span>
+          </div>
+        </div>
+      </form>
+
+      <hr class="section-divider">
+
+      <!-- 피드백 최신순 목록 -->
+      <div class="feedback-list-section">
+        <div class="feedback-list-header">
+          <h3 class="feedback-list-title">최근 등록된 구조대원들의 피드백</h3>
+          <button type="button" class="btn btn-xs btn-outline" id="btn-refresh-feedback">🔄 새로고침</button>
+        </div>
+
+        <div id="feedback-list" class="feedback-list" aria-live="polite">
+          <!-- 동적으로 피드백 아이템 렌더링 -->
+          <div class="loading-state">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>피드백 목록을 불러오는 중입니다...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 하단 푸터 -->
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <p class="footer-title">냉장고 구조대 (FRIDGE RESCUE)</p>
+      <p class="footer-desc">
+        AI 기반 식재료 분석 및 친환경 제로웨이스트 레시피 제안 서비스 &bull; 본 서비스의 모든 조리법과 추천은 참고용 추정치입니다.
+      </p>
+      <p class="footer-copy">&copy; 2026 FRIDGE RESCUE Team. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- 알림 토스트 (메시지 팝업) -->
+  <div id="toast-container" class="toast-container" role="alert" aria-live="assertive"></div>
+
+  <!-- 메인 프론트엔드 스크립트 연결 -->
+  <script src="js/app.js"></script>
+</body>
+</html>
+
